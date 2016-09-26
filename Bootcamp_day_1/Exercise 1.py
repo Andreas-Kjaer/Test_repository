@@ -58,28 +58,33 @@ AGCA              # Skipped T
 CCATA             # Added another C
 Hello, world.     # Has nothing to do with the input sequence'''
 
-# def longest_common_substring(s1, s2):
-#     """Return one of the longest common substrings"""
-#
-#     # Make sure s1 is the shorter
-#     if len(s1) > len(s2):
-#         s1, s2 = s2, s1
-#
-#     # Start with the entire sequence and shorten
-#     substr_len = len(s1)
-#     while substr_len > 0:
-#         # Try all substrings
-#         for i in range(len(s1) - substr_len + 1):
-#             if s1[i:i + substr_len] in s2:
-#                 return s1[i:i + substr_len]
-#
-#         substr_len -= 1
-#
-#     # If we haven't returned, there is no common substring
-#     return ''
+def longest_common_substring(s1, s2):
+    """Return one of the longest common substrings"""
+
+    # Make sure s1 is the shorter
+    if len(s1) > len(s2):
+        s1, s2 = s2, s1
+
+    # Start with the entire sequence and shorten
+    substr_len = len(s1)
+    while substr_len > 0:
+        # Try all substrings
+        for i in range(len(s1) - substr_len + 1):
+            if s1[i:i + substr_len] in s2:
+                return s1[i:i + substr_len]
+
+        substr_len -= 1
+
+    # If we haven't returned, there is no common substring
+    return ''
 
 '''Problem 1.4: RNA secondary structure validator
-In this problem, we will write a function that takes an RNA sequence and an RNA secondary structure and decides if the secondary structure is possible given the sequence. Remember, single stranded RNA can fold back on itself and for base pairs. An RNA secondary structure is simply the list of base pairs that are present. We will represent the base pairs in dot-parentheses notation. For example, a sequence/secondary structure pair would be
+In this problem, we will write a function that takes an RNA sequence and an RNA secondary
+structure and decides if the secondary structure is possible given the sequence.
+Remember, single stranded RNA can fold back on itself and for base pairs.
+An RNA secondary structure is simply the list of base pairs that are present.
+We will represent the base pairs in dot-parentheses notation.
+For example, a sequence/secondary structure pair would be
 0123456789
 GCATCTATGC
 (((....)))
@@ -121,33 +126,77 @@ dotparen_to_bp('(((...)))')
 ((0, 9), (1, 8), (2, 7))
 
 Hint: You might find the pop() method of lists useful.'''
-# def dotparen_to_bp(sequence):
-count = 0
-sequence = '(((..)))...((.......))..((..))..(((.....)))'
-for i, j in enumerate(sequence):
-    if j == '(':
-        # print(i, j)
-        for x, y in enumerate(sequence[i:]):
-            print('this is x', x, 'and this is y', y)
-            # print('this is i', i, 'and this is j', j)
-            if sequence[x] == '(':
-                count += 1
-            elif y == ')':
-                count -= 1
-                if count == 0:
-                    print('this is i', i, 'and this is j', j)
-                    print(i, x )
-                    break
-# return list_closed
-# seq_fold = '(((..)))...((.......))..((..))..(((.....)))'
-# print(valid_fold_check(seq_fold))
-# print(dotparen_to_bp(seq_fold))
-'''c) Because of sterics, the minimal length of a hairpin loop is three bases. A hairpin loop is a series of unpaired bases that are closed by a base pair. For example, the secondary structure (.(....).) has a single hairpin loop of length 4. So, the structure ((((..)))) is not valid because it has a hairpin loop of only two bases.
-Write a function that verifies that a list of base pairs (as outputted by dotparen_to_bp()) satisfies the hairpin requirement.
-d) Now write your validator function. The function definition should look like this:
-def rna_ss_validator(seq, sec_struc, wobble=True):
+'''The commented block of code below is not working, however I tried to understand the for-loop. So far I have
+not been able to, thus it still stands'''
+# # def dotparen_to_bp(sequence):
+# count = 0
+# sequence = '(((..)))...((.......))..((..))..(((.....)))'
+# for i, j in enumerate(sequence):
+#     if j == '(':
+#         # print(i, j)
+#         for x, y in enumerate(sequence[i:]):
+#             print('this is x', x, 'and this is y', y)
+#             # print('this is i', i, 'and this is j', j)
+#             if sequence[x] == '(':
+#                 count += 1
+#             elif y == ')':
+#                 count -= 1
+#                 if count == 0:
+#                     print('this is i', i, 'and this is j', j)
+#                     print(i, x )
+#                     break
+#Below is Justins answer. The fact that pop also removes the entry from the list it takes from
+#was the key here. I thought it just copied the number off the list you popped from..
 
-It should return True if the sequence is commensurate with a valid secondary structure and False otherwise. The wobble keyword argument is True if we allow wobble pairs (G paired with U). Here are some expected results:
+def dot_parens_to_bp(struc):
+    """
+    Convert a dot-parens structure to a list of base pairs.
+    Return False if the structure is invalid.
+    """
+
+    if not valid_fold_check(struc):
+        print('Error in input structure.')
+        return False
+
+    # Initialize list of open parens and list of base pairs
+    open_parens = []
+    bps = []
+
+    # Scan through string
+    for i, x in enumerate(struc):
+        if x == '(':
+            open_parens.append(i)
+        elif x == ')':
+            if len(open_parens) > 0:
+                bps.append((open_parens.pop(), i))
+            else:
+                print('Error in input structure.')
+                return False
+
+    # Return the result as a tuple
+    return tuple(sorted(bps))
+
+'''c) Because of sterics, the minimal length of a hairpin loop is three bases.
+A hairpin loop is a series of unpaired bases that are closed by a base pair.
+For example, the secondary structure (.(....).) has a single hairpin loop of length 4.
+So, the structure ((((..)))) is not valid because it has a hairpin loop of only two bases.
+Write a function that verifies that a list of base pairs (as outputted by dotparen_to_bp())
+satisfies the hairpin requirement.'''
+
+def hairpin_check(bp_pos):
+    '''This checks a rna fold structure to ensure that the hairpins are atleast 3 bases long
+    input sequence is a tuple of tuples, describing the positions of open and closed parentheses'''
+    bp_position = dot_parens_to_bp(bp_pos)
+    for i in bp_pos:
+        if i[1]-i[0] < 4:
+            print(i, 'basepair is too short apart')
+            return False
+    return True
+
+'''d) Now write your validator function. The function definition should look like this:
+It should return True if the sequence is commensurate with a valid secondary structure and False otherwise.
+The wobble keyword argument is True if we allow wobble pairs (G paired with U).
+Here are some expected results:
 Returns True:
 rna_ss_validator('GCAUCUAUGC', '(((....)))')
 rna_ss_validator('GCAUCUAUGU', '(((....)))')
@@ -159,3 +208,46 @@ rna_ss_validator('GCAUCUAUGU', '(((....)))', wobble=False)
 rna_ss_validator('GCAUCUAUGU', '(.(....)).')
 rna_ss_validator('GCCCUUGGCA', '(.((..))).')
 '''
+def rna_ss_validator(seq, sec_struc, wobble=True):
+    # Check if the secondary structure is valid
+    if not dot_parens_to_bp(sec_struc):
+        print('sec_struc is not a valid structure')
+        return False
+
+    # Define the base pairs position from the sec_struc
+    bps = dot_parens_to_bp(sec_struc)
+
+    # Verify that the hairpins in bps is 3 or larger
+    if not hairpin_check(bps):
+        return False
+
+    # Possible base pairs allowed, depending on wobble
+    if wobble:
+        ok_bps = ('gc', 'cg', 'au', 'ua', 'gu', 'ug')
+    else:
+        ok_bps = ('gc', 'cg', 'au', 'ua')
+
+    # Convert the bps to nucleic acids and check whether these pairs are in the ok_bps list
+    # If the pairs are valid and number of pairs passing OK is equal length of bps, return true
+    counter = 0
+    for i in bps:
+        bp = ''.join((seq[i[0]].lower(), seq[i[1]].lower()))
+        if bp in ok_bps:
+            counter += 1
+        elif bp not in ok_bps:
+            print('Invalid basepair', bp)
+            return False
+    if counter == len(bps):
+        return True
+    else:
+        return False
+print('Should be True:')
+print(rna_ss_validator('GCAUCUAUGC', '(((....)))'))
+print(rna_ss_validator('GCAUCUAUGU', '(((....)))'))
+print(rna_ss_validator('GCAUCUAUGU', '(.(....).)'))
+
+print('\nShould be False:')
+print(rna_ss_validator('GCAUCUACGC', '(((....)))'), '\n')
+print(rna_ss_validator('GCAUCUAUGU', '(((....)))', wobble=False), '\n')
+print(rna_ss_validator('GCAUCUAUGU', '(.(....)).'), '\n')
+print(rna_ss_validator('GCCCUUGGCA', '(.((..))).'),'\n')
